@@ -44,9 +44,6 @@ public sealed class MainPassNode : INode, IDisposable
 
         var clearColor = renderWorld.TryGet<ClearColor>() is { } cc ? cc : ClearColor.Black;
 
-        // -- Begin swapchain render pass with Clear --
-        // The pass is NOT disposed here - it stays open for overlay nodes.
-        // Renderer.ExecuteGraph closes it after all nodes have run.
         var passDesc = new RenderPassDescriptor(
             swapchainTarget.RenderPass,
             swapchainTarget.Framebuffer,
@@ -61,11 +58,9 @@ public sealed class MainPassNode : INode, IDisposable
         pass.SetViewport(0, 0, extent.Width, extent.Height, 0, 1);
         pass.SetScissor(0, 0, extent.Width, extent.Height);
 
-        // Publish the open pass for downstream overlay nodes
         renderWorld.Set(new ActiveSwapchainPass(pass, extent));
 
         // -- Camera-dependent drawing --
-        // Query the first ExtractedView render entity
         ExtractedView? firstView = null;
         foreach (var (_, view) in renderWorld.Entities.Query<ExtractedView>())
         {
@@ -74,11 +69,11 @@ public sealed class MainPassNode : INode, IDisposable
         }
 
         if (firstView is null)
-            return; // Clear was already issued; overlay nodes will still draw
+            return; // Clear was already issued; overlays still draw.
 
         var camera = firstView.Value;
 
-        // -- Prepare: camera UBO --
+        // -- Prepare camera UBO --
         var allocator = renderContext.DynamicAllocator;
         if (allocator is not null)
         {
@@ -103,7 +98,6 @@ public sealed class MainPassNode : INode, IDisposable
 
         if (_cameraSet is null) return;
 
-        // -- Ensure pipeline and draw functions --
         if (_meshPipeline is null)
         {
             var cache = renderWorld.TryGet<PipelineCache>();
