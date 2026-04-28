@@ -44,7 +44,7 @@ public sealed class MainPassNode : INode, IDisposable
 
         var clearColor = renderWorld.TryGet<ClearColor>() is { } cc ? cc : ClearColor.Black;
 
-        // ── Begin swapchain render pass with Clear ──────────────────────
+        // -- Begin swapchain render pass with Clear --
         // The pass is NOT disposed here - it stays open for overlay nodes.
         // Renderer.ExecuteGraph closes it after all nodes have run.
         var passDesc = new RenderPassDescriptor(
@@ -64,7 +64,7 @@ public sealed class MainPassNode : INode, IDisposable
         // Publish the open pass for downstream overlay nodes
         renderWorld.Set(new ActiveSwapchainPass(pass, extent));
 
-        // ── Camera-dependent drawing ────────────────────────────────────
+        // -- Camera-dependent drawing --
         // Query the first ExtractedView render entity
         ExtractedView? firstView = null;
         foreach (var (_, view) in renderWorld.Entities.Query<ExtractedView>())
@@ -78,7 +78,7 @@ public sealed class MainPassNode : INode, IDisposable
 
         var camera = firstView.Value;
 
-        // ── Prepare: camera UBO ─────────────────────────────────────────
+        // -- Prepare: camera UBO --
         var allocator = renderContext.DynamicAllocator;
         if (allocator is not null)
         {
@@ -103,7 +103,7 @@ public sealed class MainPassNode : INode, IDisposable
 
         if (_cameraSet is null) return;
 
-        // ── Ensure pipeline and draw functions ───────────────────────────
+        // -- Ensure pipeline and draw functions --
         if (_meshPipeline is null)
         {
             var cache = renderWorld.TryGet<PipelineCache>();
@@ -116,7 +116,7 @@ public sealed class MainPassNode : INode, IDisposable
         pass.SetPipeline(_meshPipeline.Pipeline);
         pass.SetBindGroup(_meshPipeline.Pipeline, _cameraSet);
 
-        // ── Drain opaque phase (front-to-back) ──────────────────────────
+        // -- Drain opaque phase (front-to-back) --
         var opaquePhase = renderWorld.TryGet<Opaque3dPhase>();
         if (opaquePhase is not null)
         {
@@ -129,7 +129,7 @@ public sealed class MainPassNode : INode, IDisposable
             }
         }
 
-        // ── Drain transparent phase (back-to-front) ─────────────────────
+        // -- Drain transparent phase (back-to-front) --
         var transparentPhase = renderWorld.TryGet<Transparent3dPhase>();
         if (transparentPhase is not null)
         {
